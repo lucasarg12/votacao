@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>投票 · Votação da turma</title>
+<style>
+  :root{
+    --bg:#f6f3ee; --card:#fff; --ink:#1f1d1a; --muted:#77716a; --line:#e6e0d7;
+    --accent:#c8402f; --accent-ink:#fff;
+    --o1:#e5484d; --o2:#3e63dd; --o3:#e09a12; --o4:#2f9e66;
+    --ok:#2f9e66; --ng:#e5484d;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;-webkit-tap-highlight-color:transparent}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px 16px 48px}
+  .narrow{max-width:480px}
+  h1{font-size:28px;margin:8px 0 18px;letter-spacing:.02em}
+  h1 .sub{font-size:16px;color:var(--muted);font-weight:500;margin-left:6px}
+  h2{font-size:15px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+  .muted{color:var(--muted)} .small{font-size:13px}
+  input{font:inherit;font-size:18px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;width:100%;background:#fff}
+  input:focus{outline:2px solid var(--accent);outline-offset:1px}
+  form{display:flex;gap:8px}
+  .btn{font:inherit;font-size:15px;font-weight:600;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;white-space:nowrap}
+  .btn:hover{border-color:#cfc6b9}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .btn.danger{color:var(--ng)}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--muted);padding:6px 8px}
+  .btn:disabled{opacity:.45;cursor:default}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .spacer{flex:1}
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .sala{font-weight:800;font-size:18px;letter-spacing:.08em}
+  .dot{width:9px;height:9px;border-radius:50%;background:#bbb;display:inline-block}
+  .dot.on{background:var(--ok)}
+  .pill{font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:#eee}
+  .pill.open{background:#e3f4ea;color:#1d7a4c} .pill.closed{background:#fbe5e5;color:#b42d31}
+
+  /* Aluno */
+  .qbig{text-align:center;margin:10px 0 4px;font-size:15px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .qnum{text-align:center;font-size:64px;font-weight:800;line-height:1;margin-bottom:6px}
+  .status{text-align:center;margin:0 0 16px;font-weight:600}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .opt{border:0;border-radius:18px;min-height:120px;color:#fff;font:inherit;cursor:pointer;position:relative;
+       box-shadow:0 3px 0 rgba(0,0,0,.18);transition:transform .08s, opacity .15s, outline-color .15s;outline:4px solid transparent;outline-offset:3px}
+  .opt .num{font-size:52px;font-weight:800}
+  .opt:active{transform:translateY(2px)}
+  .opt:disabled{cursor:default;opacity:.35}
+  .opt.sel{outline-color:var(--ink)}
+  .opt.sel::after{content:"✓";position:absolute;top:8px;right:12px;font-size:22px;font-weight:800}
+  .opts.has-sel .opt:not(.sel):not(:disabled){opacity:.55}
+  .o1{background:var(--o1)} .o2{background:var(--o2)} .o3{background:var(--o3)} .o4{background:var(--o4)}
+  .feedback{text-align:center;font-size:20px;font-weight:800;margin:14px 0 4px}
+  .feedback.ok{color:var(--ok)} .feedback.ng{color:var(--ng)}
+
+  /* Barras */
+  .bars{display:grid;gap:8px}
+  .bar{display:grid;grid-template-columns:34px 1fr 38px;gap:8px;align-items:center}
+  .bar .n{width:34px;height:34px;border-radius:8px;color:#fff;font-weight:800;display:grid;place-items:center}
+  .bar .track{height:22px;background:#f0ece6;border-radius:6px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:6px}
+  .bar .c{font-weight:700;text-align:right}
+  .bar.right .n{outline:3px solid var(--ink);outline-offset:1px}
+
+  /* Professor */
+  .qctl{display:flex;align-items:center;gap:10px}
+  .qctl .qnum{font-size:48px;margin:0;min-width:70px;text-align:center}
+  .gab{display:flex;gap:6px}
+  .gab button{width:42px;height:42px;border-radius:10px;border:2px solid var(--line);background:#fff;font:inherit;font-weight:800;font-size:18px;cursor:pointer;color:var(--ink)}
+  .gab button.on{color:#fff;border-color:var(--ink)}
+  .cols{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media (max-width:760px){.cols{grid-template-columns:1fr 1fr}}
+  .col{border-radius:12px;border:1px solid var(--line);overflow:hidden;background:#fff;display:flex;flex-direction:column}
+  .col.right{border:3px solid var(--ink)}
+  .col .head{color:#fff;padding:10px 12px;display:flex;align-items:baseline;justify-content:space-between}
+  .col .head b{font-size:30px}
+  .col .head span{font-size:22px;font-weight:700}
+  .col .names{padding:8px;display:flex;flex-wrap:wrap;gap:5px;align-content:flex-start;min-height:60px}
+  .chip{font-size:13px;padding:4px 9px;border-radius:999px;background:#f2eee8;font-weight:600}
+  .chip.wait{background:#fff4e0}
+  .hint{font-size:12px;color:var(--muted)}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  td.ok{background:#e3f4ea;color:#1d7a4c;font-weight:700}
+  td.ng{background:#fbe5e5;color:#b42d31;font-weight:700}
+  tr.gabrow td{font-weight:700;color:var(--muted);background:#faf8f4}
+  .tablewrap{overflow-x:auto}
+  .linkbox{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .linkbox .qr svg{width:180px;height:180px;display:block}
+  .linkbox code{font-size:14px;word-break:break-all;background:#f2eee8;padding:6px 8px;border-radius:8px;display:block;margin:6px 0}
+  .big-code{font-size:40px;font-weight:800;letter-spacing:.12em}
+  ol.setup li{margin-bottom:8px;line-height:1.45}
+  pre{background:#1f1d1a;color:#f6f3ee;padding:12px;border-radius:10px;overflow-x:auto;font-size:13px}
+  .present .cols .col .names .chip{font-size:16px}
+</style>
+</head>
+<body>
+<div id="app"><p style="padding:20px">Carregando…</p></div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, set, update, remove, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* ================================================================
+   1) COLE AQUI A CONFIGURAÇÃO DO SEU PROJETO FIREBASE
+   (Console Firebase → Configurações do projeto → Seus apps → Web)
+   O campo databaseURL é obrigatório (Realtime Database).
+   ================================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBUHcnTowvdjSyDe0pxEhjs7G2SoJcl8uI",
+  authDomain: "prova-jlpt.firebaseapp.com",
+  databaseURL: "https://prova-jlpt-default-rtdb.firebaseio.com",
+  projectId: "prova-jlpt",
+  storageBucket: "prova-jlpt.firebasestorage.app",
+  messagingSenderId: "716241573586",
+  appId: "1:716241573586:web:c710f60f91703207c1bf0b"
+};
+/* ================================================================ */
+
+const LS_ID = "votacao.id", LS_NOME = "votacao.nome";
+const CORES = {1:"var(--o1)",2:"var(--o2)",3:"var(--o3)",4:"var(--o4)"};
+const app = document.getElementById("app");
+
+function h(tag, attrs = {}, ...kids){
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})){
+    if (v === false || v == null) continue;
+    if (k === "class") e.className = v;
+    else if (k === "style") e.setAttribute("style", v);
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat(Infinity)){
+    if (k == null || k === false) continue;
+    e.append(k.nodeType ? k : document.createTextNode(String(k)));
+  }
+  return e;
+}
+const clean = s => String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+const params = new URLSearchParams(location.search);
+const sala = clean(params.get("sala"));
+const isProf = params.has("prof");
+const baseURL = location.origin + location.pathname;
+let db;
+
+function getId(){
+  let id = localStorage.getItem(LS_ID);
+  if (!id){ id = "a" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); localStorage.setItem(LS_ID, id); }
+  return id;
+}
+function novoCodigo(){
+  const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = "";
+  for (let i = 0; i < 4; i++) s += A[Math.floor(Math.random() * A.length)];
+  return s;
+}
+function go(code, prof){ location.search = "?sala=" + code + (prof ? "&prof=1" : ""); }
+function contar(votos){
+  const c = {1:0,2:0,3:0,4:0};
+  for (const v of Object.values(votos || {})) if (c[v?.c] != null) c[v.c]++;
+  return c;
+}
+function barras(votos, certa){
+  const c = contar(votos), total = Object.values(c).reduce((a,b)=>a+b,0) || 1;
+  return h("div",{class:"bars"}, [1,2,3,4].map(n =>
+    h("div",{class:"bar" + (certa === n ? " right" : "")},
+      h("div",{class:"n",style:`background:${CORES[n]}`}, n),
+      h("div",{class:"track"}, h("div",{class:"fill",style:`width:${(c[n]/total*100).toFixed(1)}%;background:${CORES[n]}`})),
+      h("div",{class:"c"}, c[n]))));
+}
+function conexao(el){
+  onValue(ref(db, ".info/connected"), s => { el.className = "dot" + (s.val() ? " on" : ""); el.title = s.val() ? "Conectado" : "Sem conexão"; });
+}
+
+/* ---------- Tela de configuração ---------- */
+function renderSetup(){
+  app.replaceChildren(h("main",{class:"wrap narrow"},
+    h("h1",{},"投票 ", h("span",{class:"sub"},"Configuração inicial")),
+    h("section",{class:"card"},
+      h("p",{},"Falta colar a configuração do Firebase no topo do arquivo (procure por ", h("b",{},"COLE AQUI"), ")."),
+      h("ol",{class:"setup"},
+        h("li",{},"Em console.firebase.google.com, crie ou abra um projeto."),
+        h("li",{},"Menu Build → ", h("b",{},"Realtime Database"), " → Criar banco de dados (região us-central1 serve)."),
+        h("li",{},"Na aba Regras do banco, cole as regras abaixo e publique."),
+        h("li",{},"Configurações do projeto → Seus apps → ícone Web (</>) → registre o app e copie o objeto firebaseConfig (confira se tem databaseURL)."),
+        h("li",{},"Cole no arquivo, salve e suba no GitHub Pages.")),
+      h("pre",{}, JSON.stringify({rules:{rooms:{"$sala":{".read":true,".write":true,
+        votes:{"$q":{"$aluno":{".validate":"newData.child('c').isNumber() && newData.child('c').val() >= 1 && newData.child('c').val() <= 4 && newData.child('nome').isString() && newData.child('nome').val().length <= 40"}}}}}}}, null, 2)))
+  ));
+}
+
+/* ---------- Tela inicial ---------- */
+function renderHome(){
+  const inA = h("input",{placeholder:"Código da sala",maxlength:"8",autocapitalize:"characters",autocomplete:"off"});
+  const inP = h("input",{placeholder:"Código (opcional, ex.: N3SAB)",maxlength:"8",autocapitalize:"characters",autocomplete:"off"});
+  app.replaceChildren(h("main",{class:"wrap narrow"},
+    h("h1",{},"投票 ", h("span",{class:"sub"},"Votação da turma")),
+    h("section",{class:"card"}, h("h2",{},"Sou aluno"),
+      h("form",{onsubmit:e=>{e.preventDefault(); const c = clean(inA.value); if (c.length >= 3) go(c,false); else inA.focus();}},
+        inA, h("button",{class:"btn primary"},"Entrar"))),
+    h("section",{class:"card"}, h("h2",{},"Sou professor"),
+      h("p",{class:"muted small"},"Deixe em branco para gerar um código aleatório. Usar sempre o mesmo código por turma mantém o histórico."),
+      h("form",{onsubmit:e=>{e.preventDefault(); const c = clean(inP.value); go(c.length >= 3 ? c : novoCodigo(), true);}},
+        inP, h("button",{class:"btn"},"Abrir sala")))
+  ));
+}
+
+/* ---------- Aluno ---------- */
+function renderNome(){
+  const inp = h("input",{placeholder:"Seu nome",maxlength:"30",autocomplete:"off"});
+  app.replaceChildren(h("main",{class:"wrap narrow"},
+    h("h1",{},"投票 ", h("span",{class:"sub"},"Sala " + sala)),
+    h("section",{class:"card"}, h("h2",{},"Como você se chama?"),
+      h("form",{onsubmit:e=>{e.preventDefault(); const n = inp.value.trim().slice(0,30); if (!n) return inp.focus();
+          localStorage.setItem(LS_NOME, n); startAluno();}},
+        inp, h("button",{class:"btn primary"},"Entrar")))));
+  inp.focus();
+}
+
+function startAluno(){
+  const id = getId();
+  const nome = localStorage.getItem(LS_NOME) || "";
+  if (!nome) return renderNome();
+  set(ref(db, `rooms/${sala}/alunos/${id}`), {nome, t: serverTimestamp()});
+
+  let state = null, votos = {}, gab = {}, curQ = null, unsubV = null, carregado = false;
+  const dot = h("span",{class:"dot"}); conexao(dot);
+
+  onValue(ref(db, `rooms/${sala}/state`), s => {
+    state = s.val(); carregado = true;
+    const q = state?.q ?? null;
+    if (q !== curQ){
+      curQ = q; if (unsubV) unsubV(); votos = {};
+      if (q != null) unsubV = onValue(ref(db, `rooms/${sala}/votes/${q}`), v => { votos = v.val() || {}; draw(); });
+    }
+    draw();
+  });
+  onValue(ref(db, `rooms/${sala}/gabarito`), s => { gab = s.val() || {}; draw(); });
+
+  function votar(n){
+    if (!state?.open) return;
+    set(ref(db, `rooms/${sala}/votes/${state.q}/${id}`), {nome, c: n, t: serverTimestamp()});
+  }
+  function trocarNome(){ localStorage.removeItem(LS_NOME); location.reload(); }
+
+  function draw(){
+    if (!localStorage.getItem(LS_NOME)) return;
+    const top = h("div",{class:"topbar"}, dot, h("b",{}, nome),
+      h("button",{class:"btn ghost small",onclick:trocarNome},"trocar"),
+      h("span",{class:"spacer"}), h("span",{class:"muted small"},"Sala "), h("span",{class:"sala"}, sala));
+    if (!carregado){ app.replaceChildren(h("main",{class:"wrap narrow"}, top, h("p",{class:"status muted"},"Conectando…"))); return; }
+    if (!state){ app.replaceChildren(h("main",{class:"wrap narrow"}, top, h("p",{class:"status muted"},"Aguardando o professor abrir a sala…"))); return; }
+
+    const q = state.q, meu = votos[id]?.c, certa = gab[q], rev = !!state.reveal;
+    const statusTxt = state.open ? (meu ? "Voto registrado — dá pra trocar enquanto estiver aberto." : "Escolha sua resposta")
+                                 : (rev ? "Resultado" : "Votação fechada");
+    const opts = h("div",{class:"opts" + (meu ? " has-sel" : "")}, [1,2,3,4].map(n =>
+      h("button",{class:`opt o${n}${meu === n ? " sel" : ""}`, disabled: !state.open, onclick:()=>votar(n), "aria-label":"Opção " + n},
+        h("span",{class:"num"}, n))));
+
+    let fb = null;
+    if (rev){
+      fb = h("section",{class:"card",style:"margin-top:16px"},
+        certa ? h("div",{class:"feedback " + (meu === certa ? "ok" : "ng")},
+          meu === certa ? "正解！ Acertou!" : (meu ? `Resposta certa: ${certa}` : `Você não votou · certa: ${certa}`)) : null,
+        barras(votos, certa));
+    }
+    app.replaceChildren(h("main",{class:"wrap narrow"}, top,
+      h("div",{class:"qbig"},"Questão"), h("div",{class:"qnum"}, q),
+      h("p",{class:"status" + (state.open ? "" : " muted")}, statusTxt),
+      opts, fb));
+  }
+}
+
+/* ---------- Professor ---------- */
+function startProf(){
+  let room = {}, showLink = false, inicializado = false;
+  const dot = h("span",{class:"dot"}); conexao(dot);
+  const R = p => ref(db, `rooms/${sala}${p ? "/" + p : ""}`);
+
+  onValue(R(""), s => {
+    room = s.val() || {};
+    if (!room.state && !inicializado){ inicializado = true; set(R("state"), {q:1, open:true, reveal:false}); }
+    draw();
+  });
+
+  const st = () => room.state || {q:1, open:false, reveal:false};
+  const setQ = n => update(R("state"), {q: Math.max(1, n), open:true, reveal:false});
+  const toggleOpen = () => update(R("state"), {open: !st().open});
+  const toggleReveal = () => update(R("state"), {reveal: !st().reveal, open: st().reveal ? st().open : false});
+  const setGab = n => { const q = st().q; (room.gabarito?.[q] === n) ? remove(R(`gabarito/${q}`)) : set(R(`gabarito/${q}`), n); };
+  const limparQ = () => { if (confirm(`Apagar todos os votos da questão ${st().q}?`)) remove(R(`votes/${st().q}`)); };
+  const zerar = () => { if (confirm("Zerar a sala? Apaga todos os votos e gabaritos (a lista de alunos fica).")) update(R(""), {votes:null, gabarito:null, state:{q:1,open:true,reveal:false}}); };
+  const removerAluno = (aid, nome) => {
+    if (!confirm(`Remover ${nome} da lista e apagar os votos dele(a)?`)) return;
+    const up = {[`alunos/${aid}`]: null};
+    for (const q of Object.keys(room.votes || {})) up[`votes/${q}/${aid}`] = null;
+    update(R(""), up);
+  };
+
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.key === "ArrowRight") setQ(st().q + 1);
+    else if (e.key === "ArrowLeft") setQ(st().q - 1);
+    else if (e.key === " "){ e.preventDefault(); toggleOpen(); }
+    else if (e.key.toLowerCase() === "r") toggleReveal();
+    else if (["1","2","3","4"].includes(e.key)) setGab(+e.key);
+  });
+
+  function alunosMap(){
+    const m = {};
+    for (const [aid, a] of Object.entries(room.alunos || {})) m[aid] = a?.nome || "?";
+    for (const vq of Object.values(room.votes || {})) for (const [aid, v] of Object.entries(vq || {})) if (!m[aid]) m[aid] = v?.nome || "?";
+    return m;
+  }
+
+  function exportCSV(){
+    const m = alunosMap(), gab = room.gabarito || {};
+    const qs = [...new Set([...Object.keys(room.votes || {}), ...Object.keys(gab)].map(Number))].sort((a,b)=>a-b);
+    const esc = v => `"${String(v ?? "").replace(/"/g,'""')}"`;
+    const linhas = [["Aluno", ...qs.map(q=>"Q"+q), "Acertos"].map(esc).join(",")];
+    linhas.push(["GABARITO", ...qs.map(q=>gab[q] ?? ""), ""].map(esc).join(","));
+    for (const [aid, nome] of Object.entries(m).sort((a,b)=>a[1].localeCompare(b[1],"pt"))){
+      let ac = 0; const cel = qs.map(q => { const c = room.votes?.[q]?.[aid]?.c; if (c && gab[q] === c) ac++; return c ?? ""; });
+      linhas.push([nome, ...cel, ac].map(esc).join(","));
+    }
+    const blob = new Blob(["﻿" + linhas.join("\r\n")], {type:"text/csv;charset=utf-8"});
+    const a = h("a",{href:URL.createObjectURL(blob), download:`votacao_${sala}_${new Date().toISOString().slice(0,10)}.csv`});
+    document.body.append(a); a.click(); a.remove();
+  }
+
+  function linkPanel(){
+    const url = `${baseURL}?sala=${sala}`;
+    const qr = h("div",{class:"qr"});
+    try { if (window.qrcode){ const g = qrcode(0, "M"); g.addData(url); g.make(); qr.innerHTML = g.createSvgTag({cellSize:5, margin:2, scalable:true}); } } catch {}
+    return h("section",{class:"card"},
+      h("div",{class:"linkbox"}, qr,
+        h("div",{},
+          h("div",{class:"muted small"},"Código da sala"), h("div",{class:"big-code"}, sala),
+          h("div",{class:"muted small",style:"margin-top:8px"},"Link dos alunos"), h("code",{}, url),
+          h("button",{class:"btn",onclick:()=>{navigator.clipboard?.writeText(url); }},"Copiar link"))));
+  }
+
+  function draw(){
+    const s = st(), q = s.q, votos = room.votes?.[q] || {}, gab = room.gabarito || {}, certa = gab[q];
+    const m = alunosMap();
+    const c = contar(votos), total = Object.keys(votos).length;
+    const faltam = Object.keys(room.alunos || {}).filter(aid => !votos[aid]).map(aid => m[aid]).sort((a,b)=>a.localeCompare(b,"pt"));
+
+    const top = h("div",{class:"topbar"},
+      h("h1",{style:"margin:0"},"投票"), dot, h("span",{class:"muted"},"Sala"), h("span",{class:"sala"}, sala),
+      h("span",{class:"spacer"}),
+      h("button",{class:"btn" + (showLink ? " primary" : ""), onclick:()=>{showLink = !showLink; draw();}}, showLink ? "Ocultar link" : "Link / QR dos alunos"));
+
+    const ctl = h("section",{class:"card"},
+      h("div",{class:"row"},
+        h("div",{class:"qctl"},
+          h("button",{class:"btn",onclick:()=>setQ(q-1),disabled:q<=1,title:"←"},"◀"),
+          h("div",{}, h("div",{class:"hint",style:"text-align:center"},"QUESTÃO"), h("div",{class:"qnum"}, q)),
+          h("button",{class:"btn",onclick:()=>setQ(q+1),title:"→"},"▶")),
+        h("div",{class:"spacer"}),
+        h("div",{},
+          h("div",{class:"hint"},"Gabarito (teclas 1–4)"),
+          h("div",{class:"gab"}, [1,2,3,4].map(n => h("button",{class:certa===n?"on":"",style:certa===n?`background:${CORES[n]}`:"",onclick:()=>setGab(n)}, n)))),
+        h("div",{class:"spacer"}),
+        h("div",{class:"row"},
+          h("span",{class:"pill " + (s.open ? "open" : "closed")}, s.open ? "Aberta" : "Fechada"),
+          h("button",{class:"btn" + (s.open ? "" : " primary"), onclick:toggleOpen, title:"Espaço"}, s.open ? "Fechar votação" : "Reabrir"),
+          h("button",{class:"btn" + (s.reveal ? " primary" : ""), onclick:toggleReveal, title:"R"}, s.reveal ? "Ocultar resultado" : "Mostrar resultado aos alunos"))),
+      h("div",{class:"hint",style:"margin-top:10px"},"Atalhos: ← → questão · espaço abre/fecha · R mostra resultado · 1–4 gabarito. Avançar a questão reabre a votação automaticamente."));
+
+    const cols = h("section",{class:"card"},
+      h("div",{class:"row",style:"margin-bottom:10px"},
+        h("h2",{style:"margin:0"},`Votos da questão ${q}`),
+        h("span",{class:"muted small"}, `${total} voto(s)` + (Object.keys(room.alunos||{}).length ? ` de ${Object.keys(room.alunos).length} aluno(s)` : "")),
+        h("span",{class:"spacer"}),
+        h("button",{class:"btn ghost danger small",onclick:limparQ},"Limpar votos desta questão")),
+      h("div",{class:"cols"}, [1,2,3,4].map(n => {
+        const nomes = Object.values(votos).filter(v => v?.c === n).map(v => v.nome || "?").sort((a,b)=>a.localeCompare(b,"pt"));
+        return h("div",{class:"col" + (certa === n ? " right" : "")},
+          h("div",{class:"head",style:`background:${CORES[n]}`}, h("b",{}, n), h("span",{}, c[n])),
+          h("div",{class:"names"}, nomes.length ? nomes.map(x => h("span",{class:"chip"}, x)) : h("span",{class:"hint"},"—")));
+      })),
+      faltam.length ? h("div",{style:"margin-top:12px"},
+        h("div",{class:"hint",style:"margin-bottom:6px"},`Ainda não votaram (${faltam.length})`),
+        h("div",{class:"row",style:"gap:5px"}, faltam.map(x => h("span",{class:"chip wait"}, x)))) : null);
+
+    // Histórico
+    const qs = [...new Set([...Object.keys(room.votes || {}), ...Object.keys(gab), String(q)].map(Number))].sort((a,b)=>a-b);
+    const nGab = qs.filter(x => gab[x]).length;
+    const alunosOrd = Object.entries(m).sort((a,b)=>a[1].localeCompare(b[1],"pt"));
+    const tabela = h("table",{},
+      h("thead",{}, h("tr",{}, h("th",{},"Aluno"), qs.map(x => h("th",{}, "Q" + x)), h("th",{},"Acertos"), h("th",{}))),
+      h("tbody",{},
+        h("tr",{class:"gabrow"}, h("td",{},"Gabarito"), qs.map(x => h("td",{}, gab[x] ?? "·")), h("td",{}, nGab ? "/" + nGab : ""), h("td",{})),
+        alunosOrd.map(([aid, nome]) => {
+          let ac = 0;
+          const cells = qs.map(x => {
+            const v = room.votes?.[x]?.[aid]?.c;
+            let cls = "";
+            if (v && gab[x]){ if (v === gab[x]){ cls = "ok"; ac++; } else cls = "ng"; }
+            return h("td",{class:cls}, v ?? "–");
+          });
+          return h("tr",{}, h("td",{}, nome), cells, h("td",{}, h("b",{}, nGab ? `${ac}/${nGab}` : "–")),
+            h("td",{}, h("button",{class:"btn ghost small",title:"Remover aluno",onclick:()=>removerAluno(aid, nome)},"✕")));
+        })));
+    const hist = h("section",{class:"card"},
+      h("div",{class:"row",style:"margin-bottom:10px"},
+        h("h2",{style:"margin:0"},"Histórico da sala"),
+        h("span",{class:"spacer"}),
+        h("button",{class:"btn",onclick:exportCSV},"Exportar CSV"),
+        h("button",{class:"btn ghost danger small",onclick:zerar},"Zerar sala")),
+      alunosOrd.length ? h("div",{class:"tablewrap"}, tabela) : h("p",{class:"muted"},"Nenhum aluno entrou ainda. Mostre o link / QR para a turma."));
+
+    app.replaceChildren(h("main",{class:"wrap"}, top, showLink || !alunosOrd.length ? linkPanel() : null, ctl, cols, hist));
+  }
+}
+
+/* ---------- Início ---------- */
+const configOK = firebaseConfig.apiKey && firebaseConfig.apiKey !== "COLE_AQUI" && firebaseConfig.databaseURL;
+if (!configOK) renderSetup();
+else {
+  db = getDatabase(initializeApp(firebaseConfig));
+  if (!sala) renderHome();
+  else if (isProf) startProf();
+  else startAluno();
+}
+</script>
+</body>
+</html>
